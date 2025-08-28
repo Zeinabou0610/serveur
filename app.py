@@ -1,12 +1,14 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS  # ✅ Import
+from flask import Flask, request, jsonify, send_from_directory
+from flask_cors import CORS
 import os
 
 app = Flask(__name__)
-CORS(app)  # ✅ Autorise toutes les origines
+CORS(app)  # autorise toutes les origines
 
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+flaskBaseUrl = 'https://serveur-production-4f7d.up.railway.app'
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -15,9 +17,13 @@ def upload_file():
     file = request.files['file']
     if file.filename == '':
         return jsonify({'error': 'Nom de fichier vide'}), 400
+
     filepath = os.path.join(UPLOAD_FOLDER, file.filename)
     file.save(filepath)
-    return jsonify({'message': 'Upload réussi', 'file_path': filepath}), 200
 
-if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    file_url = f"{flaskBaseUrl}/uploads/{file.filename}"
+    return jsonify({'message': 'Upload réussi', 'file_url': file_url}), 200
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename)
